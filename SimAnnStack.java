@@ -61,16 +61,30 @@ public class SimAnnStack {
 
         genOrientations(boxes);
 
-        System.out.println("Parsed " + boxes.length + " boxes");
-        System.out.println("Orientations:");
+        int[][] stack = buildInitialSolution(boxes.length);
+
+        PrintWriter pw = new PrintWriter(new FileWriter("greedy.txt"));
+
+        pw.println("Parsed " + boxes.length + " boxes");
+        pw.println("\nOrientations:");
         for (int i = 0; i < boxes.length; i++) {
-            System.out.print("  Box " + i + ": ");
+            pw.print("Box " + i + ": ");
             for (int j = 0; j < orientationCount[i]; j++) {
                 int[] ori = orientations[i][j];
-                System.out.print("[" + ori[0] + " " + ori[1] + " " + ori[2] + "] ");
+                pw.print("[" + ori[0] + " " + ori[1] + " " + ori[2] + "] ");
             }
-            System.out.println();
+            pw.println();
         }
+
+        pw.println("\nInitial stack (" + stack.length + " boxes):");
+        int totalHeight = 0;
+        for (int i = 0; i < stack.length; i++) {
+            totalHeight += stack[i][2];
+            pw.println("  [" + stack[i][0] + " " + stack[i][1] + " " + stack[i][2] + "] boxIndex=" + stack[i][3] + " cumHeight=" + totalHeight);
+        }
+
+        pw.close();
+        System.out.println("Debug output written to debug_output.txt");
 
     }
 
@@ -153,5 +167,53 @@ public class SimAnnStack {
         int width = Math.min(w, d);
         int length = Math.max(w, d);
         return new int[]{width, length, h};
+    }
+
+    /**
+     * greedy algorithm that builds initial stack solution
+     * orientations are sorted in descending order of base area
+     * boxes are added if they can fit and have not been used yet
+     * @param numBoxes number of boxes in the input
+     * @return 2D array of the stack solution
+     */
+    static int[][] buildInitialSolution(int numBoxes) {
+        // creates a 1D list of all orientations
+        // for each box and each orientation of that box add the orientation dimensions and the box index
+        ArrayList<int[]> allOrientations = new ArrayList<>();
+        for (int i = 0; i < numBoxes; i++) {
+            for (int j = 0; j < orientationCount[i]; j++) {
+                int[] ori = orientations[i][j];
+                allOrientations.add(new int[]{ori[0], ori[1], ori[2], i});
+            }
+        }
+
+        // Sort by base area descending
+        allOrientations.sort((a, b) -> (b[0] * b[1]) - (a[0] * a[1]));
+
+        ArrayList<int[]> stack = new ArrayList<>(); // stack solution
+        boolean[] used = new boolean[numBoxes]; // which boxes have been used already
+
+        // iterate through each orientation and add if it fits and hasn't been used - greedy solution
+        for (int[] ori : allOrientations) {
+            int boxIndex = ori[3];
+            if (used[boxIndex]) continue;
+
+            if (stack.isEmpty() || fitsOn(ori, stack.get(stack.size() - 1))) {
+                stack.add(ori);
+                used[boxIndex] = true;
+            }
+        }
+
+        return stack.toArray(new int[0][]);
+    }
+
+    /**
+     * returns true if top box can fit on bottom box
+     * @param top orientation of the top box
+     * @param bottom orientation of the bottom box
+     * @return true if top box fits on bottom box
+     */
+    private static boolean fitsOn(int[] top, int[] bottom) {
+        return top[0] < bottom[0] && top[1] < bottom[1];
     }
 }
