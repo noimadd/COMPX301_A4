@@ -15,7 +15,7 @@ import java.util.*;
  */
 public class SimAnnStack {
     private static int[][][] orientations; // [index][orientationIndex][dimensions]
-    private static int[] orientationCount; // [index][orientationCount] - number of valid orientations for each box
+    private static int[] orientationCount; // number of valid orientations for each box
 
     public static void main(String[] args) throws IOException {
         if (args.length < 3) {
@@ -106,6 +106,11 @@ public class SimAnnStack {
         return boxes.toArray(new int[0][]);
     }
 
+    /**
+     * generates a 2D array of all valid orientations for each box
+     * each box can have up to 3 unique orientations
+     * @param boxes array of box dimensions
+     */
     private static void genOrientations(int[][] boxes) {
         orientations = new int[boxes.length][3][3]; // max 3 orientations per box
         orientationCount = new int[boxes.length]; // num valid orientations per box
@@ -124,6 +129,7 @@ public class SimAnnStack {
             Set<String> seen = new HashSet<>();
             int count = 0;
 
+            // adds unique orientations to final array
             for (int[] perm : perms) {
                 String key = Arrays.toString(perm);
                 if (!seen.contains(key)) {
@@ -136,6 +142,13 @@ public class SimAnnStack {
         }
     }
 
+    /**
+     * creates an orientation for a box - also ensures that the width is always smaller than the length
+     * @param h height
+     * @param w width
+     * @param d depth
+     * @return an array representing the orientation
+     */
     private static int[] createOrientation(int h, int w, int d) {
         int width = Math.min(w, d);
         int length = Math.max(w, d);
