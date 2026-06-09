@@ -15,6 +15,7 @@ import java.util.*;
  */
 public class SimAnnStack {
     private static int[][][] orientations; // [index][orientationIndex][dimensions]
+    private static int[] orientationCount; // [index][orientationCount] - number of valid orientations for each box
 
     public static void main(String[] args) throws IOException {
         if (args.length < 3) {
@@ -42,7 +43,7 @@ public class SimAnnStack {
 
             rate = Double.parseDouble(args[2]);
 
-            if (rate <= 0 || rate >= 1) {
+            if (rate <= 0 || rate >= temp) {
                 System.out.println("Cooling rate must be a double between 0 and 1.");
                 return;
             }
@@ -58,7 +59,18 @@ public class SimAnnStack {
             return;
         }
 
-        
+        genOrientations(boxes);
+
+        System.out.println("Parsed " + boxes.length + " boxes");
+        System.out.println("Orientations:");
+        for (int i = 0; i < boxes.length; i++) {
+            System.out.print("  Box " + i + ": ");
+            for (int j = 0; j < orientationCount[i]; j++) {
+                int[] ori = orientations[i][j];
+                System.out.print("[" + ori[0] + " " + ori[1] + " " + ori[2] + "] ");
+            }
+            System.out.println();
+        }
 
     }
 
@@ -68,7 +80,7 @@ public class SimAnnStack {
      * @return 2D array of box dimensions - [index][dimensions]
      * @throws IOException 
      */
-    static int[][] parseBoxes(String file) throws IOException {
+    private static int[][] parseBoxes(String file) throws IOException {
         ArrayList<int[]> boxes = new ArrayList<>();
         BufferedReader br = new BufferedReader(new FileReader(file));
         String line;
@@ -92,5 +104,41 @@ public class SimAnnStack {
 
         br.close();
         return boxes.toArray(new int[0][]);
+    }
+
+    private static void genOrientations(int[][] boxes) {
+        orientations = new int[boxes.length][3][3]; // max 3 orientations per box
+        orientationCount = new int[boxes.length]; // num valid orientations per box
+
+        for (int i = 0; i < boxes.length; i++) {
+            int a = boxes[i][0], b = boxes[i][1], c = boxes[i][2];
+
+            // height, width, depth
+            int[][] perms = {
+                createOrientation(a, b, c),
+                createOrientation(c, a, b), 
+                createOrientation(b, c, a)
+            };
+
+            // check for duplicates
+            Set<String> seen = new HashSet<>();
+            int count = 0;
+
+            for (int[] perm : perms) {
+                String key = Arrays.toString(perm);
+                if (!seen.contains(key)) {
+                    orientations[i][count++] = perm;
+                    seen.add(key);
+                }
+            }
+
+            orientationCount[i] = count;
+        }
+    }
+
+    private static int[] createOrientation(int h, int w, int d) {
+        int width = Math.min(w, d);
+        int length = Math.max(w, d);
+        return new int[]{width, length, h};
     }
 }
