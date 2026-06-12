@@ -61,7 +61,9 @@ public class SimAnnStack {
 
         genOrientations(boxes);
 
-        int[][] stack = buildInitialSolution(boxes.length);
+        boolean[] include = new boolean[boxes.length];
+        Arrays.fill(include, true);
+        int[][] stack = buildInitialSolution(include);
 
         PrintWriter pw = new PrintWriter(new FileWriter("greedy.txt"));
 
@@ -176,11 +178,11 @@ public class SimAnnStack {
      * @param numBoxes number of boxes in the input
      * @return 2D array of the stack solution
      */
-    static int[][] buildInitialSolution(int numBoxes) {
+    static int[][] buildInitialSolution(boolean[] include) {
         // creates a 1D list of all orientations
         // for each box and each orientation of that box add the orientation dimensions and the box index
         ArrayList<int[]> allOrientations = new ArrayList<>();
-        for (int i = 0; i < numBoxes; i++) {
+        for (int i = 0; i < include.length; i++) {
             for (int j = 0; j < orientationCount[i]; j++) {
                 int[] ori = orientations[i][j];
                 allOrientations.add(new int[]{ori[0], ori[1], ori[2], i});
@@ -191,7 +193,7 @@ public class SimAnnStack {
         allOrientations.sort((a, b) -> (b[0] * b[1]) - (a[0] * a[1]));
 
         ArrayList<int[]> stack = new ArrayList<>(); // stack solution
-        boolean[] used = new boolean[numBoxes]; // which boxes have been used already
+        boolean[] used = new boolean[include.length]; // which boxes have been used already
 
         // iterate through each orientation and add if it fits and hasn't been used - greedy solution
         for (int[] ori : allOrientations) {
