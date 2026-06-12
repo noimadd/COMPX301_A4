@@ -62,6 +62,7 @@ public class SimAnnStack {
 
         genOrientations(boxes);
 
+        // generates the best stack it can over a range of attempts based on temperature and rate
         boolean[] include = new boolean[boxes.length];
         Arrays.fill(include, true);
         int[][] stack = buildInitialSolution(include);
@@ -70,6 +71,8 @@ public class SimAnnStack {
         int[][] best = simulatedAnnealing(stack, boxes, temp, rate);
         int finalHeight = stackHeight(best);
 
+
+        // write all of the statistics about the best stack and the stack itself to output.txt
         PrintWriter pw = new PrintWriter(new FileWriter("output.txt"));
 
         int cumulativeHeight = finalHeight;
@@ -175,7 +178,7 @@ public class SimAnnStack {
      * greedy algorithm that builds initial stack solution
      * orientations are sorted in descending order of base area
      * boxes are added if they can fit and have not been used yet
-     * @param numBoxes number of boxes in the input
+     * @param include boolean array where true if box i should be considered - boolean used for ease of randomness in gen neighbour
      * @return 2D array of the stack solution
      */
     static int[][] buildInitialSolution(boolean[] include) {
@@ -240,19 +243,21 @@ public class SimAnnStack {
      * @return best found solution of stacked boxes
      */
     private static int[][] simulatedAnnealing(int[][] initialStack, int[][] boxes, double temp, double rate) {
-        int[][] current = initialStack;
-        int[][] best = initialStack;
-        int currentHeight = stackHeight(current);
-        int bestHeight = currentHeight;
-        Random rand = new Random();
-        totalIterations = 0;
+        int[][] current = initialStack; // current stack
+        int[][] best = initialStack; // best stack - initially equal to greedy
+        int currentHeight = stackHeight(current); // current height
+        int bestHeight = currentHeight; // best height - initially equal to greedy
+        Random rand = new Random(); // for chance to accept worse option
+        totalIterations = 0; // resets for stats stuff
 
+        // while temp is larger than 0 continue to generate neighbours randomly swapping to them based on the temperature
         while(temp > 0) {
-            int changes = (int) Math.ceil(temp);
-            int[][] neighbour = genNeighbour(current, boxes.length, changes);
-            int neighbourHeight = stackHeight(neighbour);
-            int delta = neighbourHeight - currentHeight;
+            int changes = (int) Math.ceil(temp); // number of changes to make - decreases alongside temperature
+            int[][] neighbour = genNeighbour(current, boxes.length, changes); // newly generated neighbour
+            int neighbourHeight = stackHeight(neighbour); // neighbour height
+            int delta = neighbourHeight - currentHeight; // difference between neighbour and current height
 
+            // if delta > 0 switch else switch to the worse solution at random
             if (delta > 0) {
                 current = neighbour;
                 currentHeight = neighbourHeight;
@@ -264,6 +269,7 @@ public class SimAnnStack {
                 }
             }
 
+            // updates current best solution
             if (currentHeight > bestHeight) {
                 best = current;
                 bestHeight = currentHeight;
@@ -279,6 +285,9 @@ public class SimAnnStack {
     /**
      * randomly 'bit flips' boxes
      * randomly changes boxes from included to not included and vice versa to see if the new solution is better or worse
+     * @param current current stack
+     * @param numBoxes number of available boxes
+     * @param changes number of flips to make
      * @return a new stack
      */
     private static int[][] genNeighbour(int[][] current, int numBoxes, int changes) {
