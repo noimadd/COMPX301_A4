@@ -216,4 +216,35 @@ public class SimAnnStack {
     private static boolean fitsOn(int[] top, int[] bottom) {
         return top[0] < bottom[0] && top[1] < bottom[1];
     }
+
+    /**
+     * calculates the total height of a passed stack
+     * @param stack a stack of boxes
+     * @return the height in units
+     */
+    private static int stackHeight(int[][] stack) {
+        int total = 0;
+        for (int[] box : stack) total += box[2];
+        return total;
+    }
+
+    private static int[][] simulatedAnnealing(int[][] initialStack, int[][] boxes, double temp, double rate) {
+        int[][] current = initialStack;
+        int[][] best = initialStack;
+        int bestHeight = stackHeight(best);
+        int i = 0;
+
+        while(temp > 0) {
+            // generate neighbour
+            // evaluate
+            // accept or reject
+            // update best
+
+            i++;
+            temp -= rate;
+        }
+
+
+        return best;
+    }
 }
