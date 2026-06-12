@@ -249,4 +249,24 @@ public class SimAnnStack {
 
         return best;
     }
+
+    /**
+     * randomly 'bit flips' boxes
+     * randomly changes boxes from included to not included and vice versa to see if the new solution is better or worse
+     * @return a new stack
+     */
+    private static int[][] genNeighbour(int[][] current, int numBoxes, int changes) {
+        boolean[] include = new boolean[numBoxes];
+        for (int[] box : current) {
+            include[box[3]] = true;
+        }
+
+        Random rand = new Random();
+        for (int i = 0; i < changes; i++) {
+            int randId = rand.nextInt(numBoxes);
+            include[randId] = !include[randId];
+        }
+
+        return buildInitialSolution(include);
+    }
 }
