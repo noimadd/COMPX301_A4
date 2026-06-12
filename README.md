@@ -35,3 +35,6 @@ AI was used in order to help me define and break down the assignment into separa
 ### Articles
 - [Simulated Annealing - Wikipedia](https://en.wikipedia.org/wiki/Simulated_annealing)
 I didn't look up much external material however, I did use this wiki article on simulated annealing to clarify the cooling and acceptance probability equation. The general equation being stated within the Acceptance Probability section
+
+## Repository
+[Github Repo](https://github.com/noimadd/COMPX301_A4)
