@@ -10,12 +10,13 @@ import java.util.*;
  * 2. temperature - initial temperature as a positive integer - temperature controls the probability of accepting a worse solution during the search process
  * 3. coolingRate - cooling rate as a double between 0 and 1 - cooling rate determines how quickly the temperature decreases throughout the search process
  * 
- * Last Updated: 09/06/2026
+ * Last Updated: 12/06/2026
  * Damion Sklenars-Clare | 1638052
  */
 public class SimAnnStack {
     private static int[][][] orientations; // [index][orientationIndex][dimensions]
     private static int[] orientationCount; // number of valid orientations for each box
+    private static int totalIterations; // number of iterations to get to the solution
 
     public static void main(String[] args) throws IOException {
         if (args.length < 3) {
@@ -64,29 +65,28 @@ public class SimAnnStack {
         boolean[] include = new boolean[boxes.length];
         Arrays.fill(include, true);
         int[][] stack = buildInitialSolution(include);
+        int height = stackHeight(stack);
 
-        PrintWriter pw = new PrintWriter(new FileWriter("greedy.txt"));
+        int[][] best = simulatedAnnealing(stack, boxes, temp, rate);
+        int finalHeight = stackHeight(best);
 
-        pw.println("Parsed " + boxes.length + " boxes");
-        pw.println("\nOrientations:");
-        for (int i = 0; i < boxes.length; i++) {
-            pw.print("Box " + i + ": ");
-            for (int j = 0; j < orientationCount[i]; j++) {
-                int[] ori = orientations[i][j];
-                pw.print("[" + ori[0] + " " + ori[1] + " " + ori[2] + "] ");
-            }
-            pw.println();
+        PrintWriter pw = new PrintWriter(new FileWriter("output.txt"));
+
+        int cumulativeHeight = finalHeight;
+        for (int[] box : best) {
+            pw.println(box[0] + " " + box[1] + " " + box[2] + " " + cumulativeHeight);
+            cumulativeHeight -= box[2];
         }
 
-        pw.println("\nInitial stack (" + stack.length + " boxes):");
-        int totalHeight = 0;
-        for (int i = 0; i < stack.length; i++) {
-            totalHeight += stack[i][2];
-            pw.println("  [" + stack[i][0] + " " + stack[i][1] + " " + stack[i][2] + "] boxIndex=" + stack[i][3] + " cumHeight=" + totalHeight);
-        }
+        pw.println("\n------------- Stats -------------");
+        pw.println("Initial height (greedy): " + height);
+        pw.println("Final height (SA): " + finalHeight);
+        pw.println("Improvement: " + (finalHeight - height));
+        pw.println("Iterations run: " + totalIterations);
+        pw.println("Boxes considered: " + boxes.length);
+        pw.println("Boxes used in stack: " + best.length);
 
         pw.close();
-        System.out.println("Debug output written to debug_output.txt");
 
     }
 
@@ -183,6 +183,7 @@ public class SimAnnStack {
         // for each box and each orientation of that box add the orientation dimensions and the box index
         ArrayList<int[]> allOrientations = new ArrayList<>();
         for (int i = 0; i < include.length; i++) {
+            if (!include[i]) continue;
             for (int j = 0; j < orientationCount[i]; j++) {
                 int[] ori = orientations[i][j];
                 allOrientations.add(new int[]{ori[0], ori[1], ori[2], i});
@@ -230,22 +231,47 @@ public class SimAnnStack {
         return total;
     }
 
+    /**
+     * generates neighbours at random, accepting better solutions and randomly accepting worse ones
+     * @param initialStack the stack created by greedy solution
+     * @param boxes all of the boxes, including dimensions
+     * @param temp chance of switching to worse solution
+     * @param rate rate at which temp decreases
+     * @return best found solution of stacked boxes
+     */
     private static int[][] simulatedAnnealing(int[][] initialStack, int[][] boxes, double temp, double rate) {
         int[][] current = initialStack;
         int[][] best = initialStack;
-        int bestHeight = stackHeight(best);
-        int i = 0;
+        int currentHeight = stackHeight(current);
+        int bestHeight = currentHeight;
+        Random rand = new Random();
+        totalIterations = 0;
 
         while(temp > 0) {
-            // generate neighbour
-            // evaluate
-            // accept or reject
-            // update best
+            int changes = (int) Math.ceil(temp);
+            int[][] neighbour = genNeighbour(current, boxes.length, changes);
+            int neighbourHeight = stackHeight(neighbour);
+            int delta = neighbourHeight - currentHeight;
 
-            i++;
+            if (delta > 0) {
+                current = neighbour;
+                currentHeight = neighbourHeight;
+            } else {
+                double probAccept = Math.exp((double) delta / temp);
+                if (rand.nextDouble() < probAccept) {
+                    current = neighbour;
+                    currentHeight = neighbourHeight;
+                }
+            }
+
+            if (currentHeight > bestHeight) {
+                best = current;
+                bestHeight = currentHeight;
+            }
+
+            totalIterations++;
             temp -= rate;
         }
-
 
         return best;
     }
